@@ -1,0 +1,4 @@
+mongo-volume
+.idea
+.env
+node_modules
