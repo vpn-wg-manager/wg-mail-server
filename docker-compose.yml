@@ -2,9 +2,29 @@ version: '3.1'
 
 services:
 
+  api:
+    restart: unless-stopped
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      - MONGO_USERNAME=$MONGO_USERNAME
+      - MONGO_PASSWORD=$MONGO_PASSWORD
+      - MONGO_HOSTNAME=mongo
+      - MONGO_PORT=$MONGO_PORT
+      - MONGO_DB=$MONGO_DB
+    depends_on:
+      - mongo
+    ports:
+      - '3000:3000'
+    volumes:
+      - ../wireguard/peers:/usr/src/app/public
+      - ../wireguard/runner.pipe:/usr/src/app/runner.pipe
+
   mongo:
     image: mongo
     restart: unless-stopped
+    user: '1000:1000'
     environment:
       MONGO_INITDB_ROOT_DATABASE: users
       MONGO_INITDB_ROOT_USERNAME: root
@@ -24,3 +44,7 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: example
       ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+
+
+volumes:
+  mongo-volume:
