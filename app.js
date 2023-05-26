@@ -1,11 +1,8 @@
 require("dotenv").config();
 const express = require('express');
 const { exec } = require('child_process');
-const { customAlphabet } = require('nanoid');
-const { mongoose } = require('./db.config');
 const {User} = require("./model");
 const {STATUS} = require("./constants");
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 10);
 
 
 (async function() {
@@ -28,59 +25,65 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 10);
   });
 
   app.get('/user', async (req, res)=>{
-    const users = await User.find();
-    exec('echo "./runner.sh -g" > runner.pipe')
-    res.status(200);
-    res.send(users);
-  });
-
-  app.post('/user', async (req, res)=>{
     try {
-      const {email, phone} = req.body
-      const name = nanoid();
-      const user = new User({
-        name,
-        email,
-        phone,
-        status: STATUS.normal,
-        createdDate: new Date().getTime(),
-        updatedDate: new Date().getTime()
-      })
-      await user.save()
-      exec(`echo "./runner.sh -s ${name}" > runner.pipe`)
-      res.status(200)
-      res.send('Success')
+      const users = await User.find();
+      exec('echo "./runner.sh -g" > runner.pipe')
+      res.status(200);
+      res.send(users);
     } catch (e) {
       res.status(400)
       console.log('error')
     }
   });
 
-  app.delete('/user/:name', async (req, res)=>{
+  app.post('/user', async (req, res)=>{
     try {
-      const user = await User.findOne({name: req.params.name.toLowerCase()}).exec();
-      await User.findOneAndUpdate({name: req.params.name.toLowerCase()}, {status: STATUS.disabled})
-      exec(`echo "./runner.sh -r ${user.name}" > runner.pipe`)
+      const {data: users} = req.body
+      const mappedUsers = users.map(user =>{
+        const {name, email, phone} = user;
+        return {
+            name,
+            email,
+            phone,
+            status: STATUS.normal,
+            createdDate: new Date().getTime(),
+            updatedDate: new Date().getTime()
+        }
+      });
+      await User.insertMany(mappedUsers)
+      const names = users.map(user => user.name).join(" ");
+      exec(`echo "./runner.sh -s ${names}" > runner.pipe`)
       res.status(200)
       res.send('Success')
-    }catch (e) {
+    } catch (e) {
       res.status(400)
-      console.log('error')
+      console.log('error', e)
     }
   });
 
-  app.get('/user/:name/approve', async (req, res)=>{
+  app.put('/user', async (req,res) => {
     try {
-      const user = await User.findOne({name: req.params.name.toLowerCase()}).exec();
-      await User.findOneAndUpdate({name: req.params.name.toLowerCase()}, {status: STATUS.enabled})
-      exec(`echo "./runner.sh -s ${user.name}" > runner.pipe`)
+      const {names, action} = req.body.data;
+      for (const name of names) {
+        if (action === STATUS.disabled) {
+          await User.findOneAndUpdate({name, status: {$in: [STATUS.enabled, STATUS.normal]}}, {status: STATUS.disabled, updatedDate: new Date().getTime()})
+        } else if (action === STATUS.enabled) {
+          await User.findOneAndUpdate({name, status: {$in: [STATUS.disabled, STATUS.normal]}}, {status: STATUS.enabled, updatedDate: new Date().getTime()})
+        }
+      }
+      const namesString = names.join(" ");
+      if (action === STATUS.disabled) {
+        exec(`echo "./runner.sh -r ${namesString}" > runner.pipe`)
+      } else if (action === STATUS.enabled) {
+        exec(`echo "./runner.sh -s ${namesString}" > runner.pipe`)
+      }
       res.status(200)
       res.send('Success')
-    }catch (e) {
+    } catch (e) {
       res.status(400)
       console.log('error')
     }
-  });
+  })
 
   app.listen(PORT, (error) =>{
       if(!error)
