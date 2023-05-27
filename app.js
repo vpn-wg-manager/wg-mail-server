@@ -40,19 +40,16 @@ const {STATUS} = require("./constants");
     try {
       const {data: users} = req.body
       const mappedUsers = users.map(user =>{
-        const {name, email, phone} = user;
+        const {name, email} = user;
         return {
             name,
             email,
-            phone,
             status: STATUS.normal,
             createdDate: new Date().getTime(),
             updatedDate: new Date().getTime()
         }
       });
       await User.insertMany(mappedUsers)
-      const names = users.map(user => user.name).join(" ");
-      exec(`echo "./runner.sh -s ${names}" > runner.pipe`)
       res.status(200)
       res.send('Success')
     } catch (e) {
