@@ -33,6 +33,23 @@ class MailService {
     }
   }
 
+  static async createOne(params) {
+    try {
+      const mail = {
+        client_email: params.email,
+        name: params.name,
+        status: EMAIL_STATUS.waiting,
+        type: params.type,
+        response:null,
+        createdDate: new Date().getTime(),
+        updatedDate: null,
+      }
+      return MailRepository.saveOne(mail)
+    } catch (e) {
+      throw e
+    }
+  }
+
   static async updateOne({name, status, response}) {
     try {
       const params = {name, status}

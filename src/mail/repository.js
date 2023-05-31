@@ -17,6 +17,10 @@ class MailRepository {
   static async saveMany(params) {
     await MailModel.insertMany(params)
   }
+
+  static async saveOne(params) {
+    return MailModel.create(params)
+  }
 }
 
 module.exports = {
