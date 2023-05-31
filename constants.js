@@ -4,7 +4,15 @@ const STATUS = {
   enabled: 'enabled'
 }
 
+const EMAIL_STATUS = {
+  waiting: 'waiting',
+  sending: 'sending',
+  sent: 'sent',
+  error: 'error',
+}
+
 
 module.exports = {
-  STATUS
+  STATUS,
+  EMAIL_STATUS
 }

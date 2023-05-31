@@ -18,7 +18,7 @@ services:
     ports:
       - '3000:3000'
     volumes:
-      - ../wireguard/peers:/usr/src/app/public
+      - ../wireguard/peers:/usr/src/app/vpn_files
       - ../wireguard/runner.pipe:/usr/src/app/runner.pipe
 
   mongo:

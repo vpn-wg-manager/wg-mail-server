@@ -1,9 +1,10 @@
 require("dotenv").config();
 const express = require('express');
 const { exec } = require('child_process');
-const {User} = require("./model");
-const {STATUS} = require("./constants");
-
+const {User, Mail} = require("./model");
+const {STATUS, EMAIL_STATUS} = require("./constants");
+const mailService = require('./mailService');
+const {configureParams} = require("./helpers");
 
 (async function() {
   const app = express();
@@ -12,6 +13,8 @@ const {STATUS} = require("./constants");
   app.use(express.static('public'));
   app.use(express.json());
   app.use(express.urlencoded());
+
+  // await mailService.main();
 
 
   app.get('/test', (req, res)=>{
@@ -66,6 +69,16 @@ const {STATUS} = require("./constants");
           await User.findOneAndUpdate({name, status: {$in: [STATUS.enabled, STATUS.normal]}}, {status: STATUS.disabled, updatedDate: new Date().getTime()})
         } else if (action === STATUS.enabled) {
           await User.findOneAndUpdate({name, status: {$in: [STATUS.disabled, STATUS.normal]}}, {status: STATUS.enabled, updatedDate: new Date().getTime()})
+          const user = await User.findOne({name}).exec();
+          if (!user.email || !user.name) return;
+          await Mail.create({
+            client_email: user.email,
+            name: user.name,
+            status: EMAIL_STATUS.waiting,
+            response: null,
+            createdDate: new Date().getTime(),
+            updatedDate: null
+          })
         }
       }
       const namesString = names.join(" ");
@@ -81,6 +94,37 @@ const {STATUS} = require("./constants");
       console.log('error')
     }
   })
+
+  setInterval(async () => {
+    try {
+      const waitingMails = await Mail.find({status: EMAIL_STATUS.waiting}).exec()
+      console.log('waiting mails', waitingMails)
+      for (const mail of waitingMails) {
+        await Mail.findOneAndUpdate({name: mail.name}, {
+          status: EMAIL_STATUS.sending,
+          updatedDate: new Date().getTime()
+        })
+        const params = {
+          email: mail.client_email,
+          fileName: mail.name,
+          subject: 'Access',
+          text: 'some text here!'
+        }
+        console.log('params', params)
+        const transporter = await mailService.main();
+        await transporter.sendMail(configureParams(params), async (err, info) => {
+          await Mail.findOneAndUpdate({name: mail.name}, {
+            status: EMAIL_STATUS.sent,
+            response: info.response,
+            updatedDate: new Date().getTime()
+          })
+        })
+      }
+    } catch (e) {
+      console.log('error')
+    }
+  }, 1000 * 10)
+
 
   app.listen(PORT, (error) =>{
       if(!error)
