@@ -11,8 +11,15 @@ const EMAIL_STATUS = {
   error: 'error',
 }
 
+const EMAIL_TYPE = {
+  create_vpn: 'create_vpn',
+  disable_after_week: 'disable_after_week',
+  disable_after_day: 'disable_after_day'
+}
+
 
 module.exports = {
   STATUS,
-  EMAIL_STATUS
+  EMAIL_STATUS,
+  EMAIL_TYPE
 }
