@@ -1,23 +1,17 @@
 require("dotenv").config();
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
 const create = async () => {
-  const {
-    MAIL_HOST,
-    MAIL_USER,
-    MAIL_PASS
-  } = process.env
+  const { MAIL_HOST, MAIL_USER, MAIL_PASS } = process.env;
 
   const transporter = await nodemailer.createTransport({
-    pool: true,
-    // TODO NOT MAIL RU
     host: MAIL_HOST,
     port: 465,
-    secure: true,
     auth: {
       user: MAIL_USER,
-      pass: MAIL_PASS
-    }
+      pass: MAIL_PASS,
+    },
+    secure: true
   });
 
   await transporter.verify(function (error, success) {
@@ -28,8 +22,8 @@ const create = async () => {
     }
   });
   return transporter;
-}
+};
 
 module.exports = {
-  create
-}
+  create,
+};
