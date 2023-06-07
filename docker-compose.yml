@@ -16,7 +16,7 @@ services:
     depends_on:
       - mongo
     ports:
-      - '3000:3000'
+      - '3050:3050'
     volumes:
       - ../wireguard/peers:/usr/src/app/vpn_files
       - ../wireguard/runner.pipe:/usr/src/app/runner.pipe
